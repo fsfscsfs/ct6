@@ -1,0 +1,39 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>咪咕 JSInterface 专项检查 v1</title>
+<style>body{font:22px system-ui,sans-serif;background:#101923;color:#eef5ff;max-width:1000px;margin:auto;padding:24px}button,a{display:block;font:inherit;background:#245777;color:white;border:1px solid #63869b;border-radius:8px;padding:16px;margin:12px 0;text-decoration:none}pre,textarea{box-sizing:border-box;width:100%;background:#08121b;color:#b9efc0;padding:15px;font:17px monospace;white-space:pre-wrap;overflow-wrap:anywhere}textarea{height:220px}p{line-height:1.6}h1{font-size:29px}</style>
+<h1>咪咕 JSInterface 专项检查 v1</h1>
+<p>请从咪咕快游内打开本页。扫描只检查属性描述和原型，不调用桥接方法、不读取 getter，也不会读取设备 ID 或上传报告。</p>
+<button id="scan">1. 检查 JSInterface</button><pre id="summary">尚未扫描</pre>
+<button id="copy">2. 复制报告</button><button id="save">3. 下载 JSON 报告（若宿主支持下载）</button>
+<p id="status">可以直接拍下上方方法列表。函数 length 只是 JavaScript 元数据，不能据此确定 Java 参数签名；枚举失败或没有发现也不证明接口不存在。</p>
+<textarea id="report" readonly aria-label="完整报告"></textarea><a href="./">返回综合测试页</a>
+<script>
+(function(){'use strict';
+var report=null;var summary=document.getElementById('summary'),area=document.getElementById('report'),status=document.getElementById('status');
+function err(e){return String(e&&e.message||e).slice(0,250);}
+function scan(){
+ report={version:1,target:'JSInterface',page:location.origin+location.pathname,userAgent:navigator.userAgent,time:new Date().toISOString(),found:false,levels:[],errors:[],limitations:['No bridge methods or getters called.','JS function length is not a reliable Java method signature.','Enumeration can be incomplete.']};
+ var owner=window,desc=null;
+ try{for(var i=0;owner&&i<4;i++){desc=Object.getOwnPropertyDescriptor(owner,'JSInterface');if(desc)break;owner=Object.getPrototypeOf(owner);}}catch(e){report.errors.push('lookup: '+err(e));}
+ var obj;
+ if(desc){report.found=true;report.property={enumerable:desc.enumerable,configurable:desc.configurable,accessor:!('value' in desc)};if('value' in desc)obj=desc.value;else report.errors.push('JSInterface is an accessor; not evaluated.');}
+ if(obj!==null&&(typeof obj==='object'||typeof obj==='function')){
+  var visited=[];
+  for(var depth=0;obj&&depth<4;depth++){
+   if(obj===Object.prototype||obj===Function.prototype||visited.indexOf(obj)>=0)break;
+   visited.push(obj);var level={depth:depth,properties:[]};report.levels.push(level);
+   try{var names=Object.getOwnPropertyNames(obj);level.totalProperties=names.length;
+    names.slice(0,150).forEach(function(name){var item={name:name};try{var d=Object.getOwnPropertyDescriptor(obj,name);if(!d){item.kind='descriptor unavailable';}else{item.enumerable=d.enumerable;if(!('value' in d))item.kind='accessor (not read)';else{item.kind=typeof d.value;if(typeof d.value==='function'){var len=Object.getOwnPropertyDescriptor(d.value,'length');if(len&&'value' in len&&typeof len.value==='number')item.jsLength=len.value;try{item.functionRepresentation=Function.prototype.toString.call(d.value).slice(0,500);}catch(e){item.representationError=err(e);}}}}}catch(e){item.error=err(e);}level.properties.push(item);});
+   }catch(e){level.error=err(e);}
+   try{obj=Object.getPrototypeOf(obj);}catch(e){report.errors.push('prototype: '+err(e));break;}
+  }
+ }
+ var lines=[report.found?'找到 JSInterface（是否为原生注入仍需实现证据）':'本次没有通过属性描述找到 JSInterface'];
+ report.levels.forEach(function(level){lines.push('\n原型层级 '+level.depth+'：');level.properties.forEach(function(p){lines.push(p.name+' — '+p.kind+(p.jsLength!==undefined?'；JS length='+p.jsLength:'')+(p.error?'；'+p.error:''));});if(level.error)lines.push(level.error);});
+ if(report.errors.length)lines.push('\n检查限制：'+report.errors.join('\n'));
+ summary.textContent=lines.join('\n');area.value=JSON.stringify(report,null,2);status.textContent='扫描结束。未执行上述方法，未上传任何报告。';
+}
+document.getElementById('scan').onclick=scan;
+document.getElementById('copy').onclick=function(){if(!report){status.textContent='请先扫描。';return;}area.focus();area.select();if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(area.value).then(function(){status.textContent='已复制报告。';},function(){status.textContent='复制被拒绝，可长按文本框复制或拍照。';});}else{status.textContent='已选中报告，可长按复制或拍照。';}};
+document.getElementById('save').onclick=function(){if(!report){status.textContent='请先扫描。';return;}var u=URL.createObjectURL(new Blob([area.value],{type:'application/json'})),a=document.createElement('a');a.href=u;a.download='migu-jsinterface-report.json';document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(u);},60000);status.textContent='已请求下载；若无反应，请复制报告或拍照。';};
+})();
+</script></html>
