@@ -1,0 +1,450 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>CT6 车机网页接口与应用唤起综合测试</title>
+    <style>
+        body {
+            background: #101923;
+            color: #eef5ff;
+            font: 20px system-ui, -apple-system, sans-serif;
+            max-width: 1080px;
+            margin: auto;
+            padding: 24px;
+        }
+        h1 {
+            font-size: 28px;
+            color: #64b5f6;
+            margin-bottom: 8px;
+        }
+        h2 {
+            font-size: 22px;
+            margin-top: 32px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #32475b;
+            color: #90caf9;
+        }
+        p, small {
+            line-height: 1.6;
+            color: #b0bec5;
+        }
+        .desc {
+            font-size: 16px;
+            color: #cfd8dc;
+            background: #1c2b3a;
+            padding: 10px 14px;
+            border-radius: 6px;
+            margin-bottom: 12px;
+        }
+        .warn {
+            color: #ffb74d;
+            background: #2a2012;
+            padding: 10px 14px;
+            border-radius: 6px;
+            margin: 10px 0;
+            border-left: 4px solid #ffa726;
+            font-size: 16px;
+        }
+        .success {
+            color: #81c784;
+            background: #13271b;
+            padding: 10px 14px;
+            border-radius: 6px;
+            margin: 10px 0;
+            border-left: 4px solid #4caf50;
+            font-size: 16px;
+        }
+        a, button, .pick {
+            display: block;
+            background: #254866;
+            color: #ffffff;
+            padding: 16px 20px;
+            margin: 10px 0;
+            border: 1px solid #53738d;
+            border-radius: 8px;
+            text-decoration: none;
+            cursor: pointer;
+            text-align: left;
+            font-size: 18px;
+            box-sizing: border-box;
+            transition: background 0.2s;
+        }
+        a:active, button:active, .pick:active {
+            background: #1b659c;
+        }
+        .btn-download {
+            background: #1b5e20;
+            border-color: #4caf50;
+            font-weight: bold;
+            font-size: 20px;
+        }
+        .btn-download:active {
+            background: #2e7d32;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 14px;
+            font-size: 18px;
+            border-radius: 8px;
+            border: 1px solid #53738d;
+            background: #0d151d;
+            color: #ffffff;
+            box-sizing: border-box;
+            margin: 8px 0;
+        }
+        input[type="file"] {
+            display: none;
+        }
+        pre#log {
+            background: #080e15;
+            padding: 16px;
+            border-radius: 8px;
+            border: 1px solid #233748;
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
+            font-size: 16px;
+            line-height: 1.5;
+            color: #81c784;
+            max-height: 380px;
+            overflow-y: auto;
+        }
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        @media (max-width: 720px) {
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+        }
+        .tag-btn {
+            background: #1e364d;
+            border: 1px solid #3c5973;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>CT6 车机网页接口与应用唤起综合测试</h1>
+    <div class="desc">
+        本页面由电脑热点服务端（ct6_files_test.py）动态托管。点击任何按钮均会自动向电脑控制台实时同步日志。
+    </div>
+
+    <h2>一、电脑端 APK 直链下载（推荐突破口）</h2>
+    <div class="success">
+        说明：点击后将由服务端直接输出带有 <code>Content-Type: application/vnd.android.package-archive</code> 及 <code>Content-Disposition: attachment</code> 的标准 APK 数据流。
+    </div>
+    <a href="/1.apk" target="_self" download="1.apk" class="btn-download" data-test="下载-标准直链">1-1. 【直链下载】下载电脑上的 1.apk（当前页面跳转）</a>
+    <a href="/1.apk" target="_blank" class="tag-btn" data-test="下载-新窗口下载">1-2. 尝试在新窗口触发下载（target=_blank）</a>
+    <button id="btn_js_download" class="tag-btn" data-test="下载-JS触发">1-3. 尝试通过 location.href 触发下载</button>
+
+    <h2>二、原生文件选择器（寻找隐藏的 DocumentsUI）</h2>
+    <div class="desc">
+        测试系统级文档选择器。车机若弹出窗口，请观察左上角是否有“三道杠”（抽屉菜单），并尝试能否切换到内部存储或 U 盘。
+    </div>
+    <label class="pick">2-1. 选择任意文件（*/*）<input type="file" accept="*/*" data-test="文件-任意文件"></label>
+    <label class="pick">2-2. 选择 APK 安装包（.apk）<input type="file" accept=".apk,application/vnd.android.package-archive" data-test="文件-APK过滤"></label>
+    <label class="pick">2-3. 选择图片文件（image/*）<input type="file" accept="image/*" data-test="文件-图片"></label>
+    <label class="pick">2-4. 选择视频文件（video/*）<input type="file" accept="video/*" data-test="文件-视频"></label>
+    <label class="pick">2-5. 选择文件夹（webkitdirectory 待测）<input type="file" webkitdirectory multiple data-test="文件-文件夹"></label>
+
+    <h2>三、系统协议与应用探测（测试容器是否拦截自定义协议）</h2>
+    <div class="desc">
+        测试车机 WebView 对 Android 常见应用 Scheme 和系统 Intent 的放行程度。
+    </div>
+    <div class="grid-2">
+        <a data-test="协议-系统设置" href="intent:#Intent;action=android.settings.SETTINGS;end">3-1. 唤起系统设置（SETTINGS）</a>
+        <a data-test="协议-应用设置" href="intent:#Intent;action=android.settings.APPLICATION_SETTINGS;end">3-2. 唤起应用列表（APPS）</a>
+        <a data-test="协议-系统拨号" href="tel:10086">3-3. 唤起标准拨号（tel:10086）</a>
+        <a data-test="协议-应用商店" href="market://details?id=com.autonavi.amapauto">3-4. 唤起应用市场（market://）</a>
+        <a data-test="协议-高德地图" href="androidamap://navi?sourceApplication=test&lat=31.2&lon=121.4&dev=0">3-5. 唤起高德地图（androidamap://）</a>
+        <a data-test="协议-百度地图" href="baidumap://map/show">3-6. 唤起百度地图（baidumap://）</a>
+    </div>
+
+    <h2>四、本地下载目录与文件直跳测试</h2>
+    <div class="warn">
+        注意：部分车机 WebView 允许直接浏览本地目录。若能打开，可尝试直接在列表中点击已下载的 APK。
+    </div>
+    <div class="grid-2">
+        <a data-test="本地-Download目录" href="file:///sdcard/Download/">4-1. 访问 /sdcard/Download/</a>
+        <a data-test="本地-emulated下载" href="file:///storage/emulated/0/Download/">4-2. 访问 /storage/emulated/0/Download/</a>
+        <a data-test="本地-直接APK" href="file:///sdcard/Download/1.apk">4-3. 直接打开 /sdcard/Download/1.apk</a>
+        <a data-test="本地-emulated直接APK" href="file:///storage/emulated/0/Download/1.apk">4-4. 直接打开 /storage/emulated/0/1.apk</a>
+    </div>
+
+    <h2>五、规范化 Intent 安装请求生成器</h2>
+    <div class="desc">
+        修复了原代码的三斜杠及语法冲突，支持以标准 VIEW 动作携带安装 Flags 发起唤起。
+    </div>
+    <label for="apk">目标 APK 路径 / Content URI：</label>
+    <input id="apk" type="text" value="file:///storage/emulated/0/Download/1.apk">
+    <button id="build" style="background:#1976d2;">更新安装链接</button>
+
+    <div class="grid-2">
+        <a id="btn_view_std" class="tag-btn" data-test="Intent-VIEW标准">5-1. VIEW 标准（推荐规范）</a>
+        <a id="btn_view_flag" class="tag-btn" data-test="Intent-VIEW带Flag">5-2. VIEW + 读权限与新任务 Flag</a>
+        <a id="btn_pkg_installer" class="tag-btn" data-test="Intent-显式安装器">5-3. 显式指定安装器包名</a>
+        <a id="btn_saf_doc" class="tag-btn" data-test="Intent-SAF文档选择器" href="intent:#Intent;action=android.intent.action.OPEN_DOCUMENT;category=android.intent.category.OPENABLE;type=*/*;end">5-4. SAF 文档选择器</a>
+    </div>
+
+    <h2>六、车机环境 & 原生 JSBridge 扫描（结果自动存盘到电脑）</h2>
+    <div class="desc">
+        扫描宿主 App 是否向当前网页注入了带有安装、下载或文件权限的 Java 原生对象。
+    </div>
+    <button id="detect_env" style="background:#2e7d32;">开始深度扫描并向电脑上报 JSON 报告</button>
+    <p id="bridge_status" style="color:#ffe082;">尚未扫描</p>
+
+    <h2>七、测试观察与操作日志</h2>
+    <div class="grid-2">
+        <input id="note" type="text" placeholder="输入手记，例如：点击后白屏 / 提示未知协议">
+        <button id="add" style="background:#455a64;">记录并发送手记</button>
+    </div>
+    <div style="margin-top: 10px;">
+        <button id="clear_log" style="display:inline-block; width:auto; padding:8px 16px; margin:0 8px 8px 0; background:#37474f; font-size:14px;">清空日志</button>
+        <button id="copy_log" style="display:inline-block; width:auto; padding:8px 16px; margin:0 0 8px 0; background:#37474f; font-size:14px;">复制全部日志</button>
+        <a href="/portal" style="display:inline-block; width:auto; padding:8px 16px; margin:0 0 8px 0; background:#00838f; font-size:14px;">刷新本页面</a>
+    </div>
+    <pre id="log"></pre>
+
+    <script>
+    (function () {
+        var log = document.getElementById('log');
+
+        // 发送打点到电脑终端
+        function reportAction(name, extra) {
+            try {
+                var query = 'action=' + encodeURIComponent(name);
+                if (extra) {
+                    query += '&detail=' + encodeURIComponent(extra);
+                }
+                query += '&t=' + Date.now();
+                var img = new Image();
+                img.src = '/event?' + query;
+            }
+            catch (e) {}
+        }
+
+        function record(message, syncToPc) {
+            var time = new Date().toLocaleTimeString();
+            var line = '[' + time + '] ' + message;
+            log.textContent = line + '\n' + log.textContent;
+            if (syncToPc !== false) {
+                reportAction('LOG', message);
+            }
+        }
+
+        // 全局错误捕获
+        window.onerror = function (msg, url, lineNo, columnNo, error) {
+            var errMsg = '【JS异常】' + msg + ' (行:' + lineNo + ')';
+            record(errMsg, true);
+            return false;
+        };
+
+        // 绑定所有带 data-test 属性的元素
+        document.querySelectorAll('[data-test]').forEach(function (el) {
+            el.addEventListener('click', function () {
+                var name = el.getAttribute('data-test');
+                var href = el.getAttribute('href') || '无href';
+                record('点击: ' + name + ' -> ' + href.substring(0, 100), true);
+            });
+
+            if (el.tagName === 'INPUT' && el.type === 'file') {
+                el.addEventListener('change', function () {
+                    var files = Array.from(el.files || []);
+                    if (files.length === 0) {
+                        record(el.getAttribute('data-test') + ' 用户取消或未选择任何文件', true);
+                    }
+                    else {
+                        var fileInfos = files.slice(0, 5).map(function (f) {
+                            var sizeMb = (f.size / (1024 * 1024)).toFixed(2);
+                            return f.name + ' (' + sizeMb + 'MB, ' + (f.type || '无MIME') + ')';
+                        }).join('; ');
+                        record(el.getAttribute('data-test') + ' 返回 ' + files.length + ' 个文件: ' + fileInfos, true);
+                    }
+                });
+            }
+        });
+
+        // 1-3. JS 触发下载
+        document.getElementById('btn_js_download').onclick = function () {
+            record('通过 window.location.href 触发 /1.apk', true);
+            window.location.href = '/1.apk';
+        };
+
+        // 规范 Intent URI 组装
+        function buildIntents() {
+            var raw = document.getElementById('apk').value.trim();
+            if (!raw) {
+                record('请输入文件路径', false);
+                return;
+            }
+
+            var scheme = 'file';
+            var pathAfter = raw;
+            if (raw.indexOf('file://') === 0) {
+                scheme = 'file';
+                pathAfter = raw.substring('file://'.length);
+            }
+            else if (raw.indexOf('content://') === 0) {
+                scheme = 'content';
+                pathAfter = raw.substring('content://'.length);
+            }
+
+            var cleanPath = pathAfter.replace(/^\/+/, '');
+
+            var uriStd = 'intent://' + cleanPath + '#Intent;' +
+                'scheme=' + scheme + ';' +
+                'action=android.intent.action.VIEW;' +
+                'type=application/vnd.android.package-archive;' +
+                'end';
+
+            var uriFlag = 'intent://' + cleanPath + '#Intent;' +
+                'scheme=' + scheme + ';' +
+                'action=android.intent.action.VIEW;' +
+                'type=application/vnd.android.package-archive;' +
+                'launchFlags=0x10000001;' +
+                'end';
+
+            var uriPkg = 'intent://' + cleanPath + '#Intent;' +
+                'scheme=' + scheme + ';' +
+                'action=android.intent.action.VIEW;' +
+                'type=application/vnd.android.package-archive;' +
+                'package=com.android.packageinstaller;' +
+                'launchFlags=0x10000001;' +
+                'end';
+
+            document.getElementById('btn_view_std').href = uriStd;
+            document.getElementById('btn_view_flag').href = uriFlag;
+            document.getElementById('btn_pkg_installer').href = uriPkg;
+
+            record('已更新 Intent 链接。规范化路径: ' + cleanPath, false);
+        }
+
+        // 车机环境与 JSBridge 扫描并自动上报电脑
+        function detectEnvironmentAndReport() {
+            var statusEl = document.getElementById('bridge_status');
+            statusEl.textContent = '正在深度扫描原生环境与 JS 属性...';
+
+            var hint = /android|ajmide|cadillac|generalmotors|gm|car|vehicle|bridge|native|webkit|external|jsinterface|javascriptinterface|download|install/i;
+            var report = {
+                version: 1,
+                page: location.pathname,
+                userAgent: navigator.userAgent,
+                candidates: [],
+                allGlobals: [],
+                errors: []
+            };
+
+            var propNames = Object.getOwnPropertyNames(window).slice(0, 1500);
+            propNames.forEach(function (prop) {
+                try {
+                    var desc = Object.getOwnPropertyDescriptor(window, prop);
+                    if (!desc) {
+                        return;
+                    }
+                    var isVal = ('value' in desc);
+                    var item = {
+                        name: prop,
+                        type: isVal ? typeof desc.value : 'accessor'
+                    };
+                    report.allGlobals.push(item);
+
+                    if (isVal && desc.value && (typeof desc.value === 'object' || typeof desc.value === 'function') && desc.value !== window) {
+                        var keys = Object.getOwnPropertyNames(desc.value).slice(0, 100);
+                        var funcs = [];
+                        keys.forEach(function (k) {
+                            try {
+                                if (typeof desc.value[k] === 'function') {
+                                    funcs.push(k);
+                                }
+                            }
+                            catch (err) {}
+                        });
+
+                        var isCandidate = hint.test(prop) || funcs.some(function (fn) {
+                            return /open|install|download|start|native|call|file/i.test(fn);
+                        });
+
+                        if (isCandidate) {
+                            report.candidates.push({
+                                name: prop,
+                                type: typeof desc.value,
+                                functions: funcs
+                            });
+                        }
+                    }
+                }
+                catch (ex) {
+                    report.errors.push({ name: prop, error: ex.message });
+                }
+            });
+
+            var summaryText = '检测到候选原生对象: ' + report.candidates.length + ' 个';
+            if (report.candidates.length > 0) {
+                summaryText += '\n对象列表: ' + report.candidates.map(function (c) {
+                    return c.name + ' (' + c.functions.slice(0, 5).join(',') + ')';
+                }).join('; ');
+            }
+            record('【环境扫描完成】' + summaryText, false);
+            statusEl.textContent = summaryText + '。正在将完整报告发回电脑...';
+
+            // 发送完整报告给电脑服务端保存
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', '/__ct6_test__/bridge-report', true);
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            xhr.timeout = 10000;
+            xhr.onload = function () {
+                if (xhr.status === 200) {
+                    statusEl.textContent = '完整报告已成功保存至电脑脚本目录（JSON格式）！';
+                    record('报告已在电脑端保存', false);
+                }
+                else {
+                    statusEl.textContent = '发回电脑响应状态码: ' + xhr.status;
+                }
+            };
+            xhr.onerror = function () {
+                statusEl.textContent = '发回电脑失败，可直接查看上方日志。';
+            };
+            xhr.send(JSON.stringify(report));
+        }
+
+        // 事件绑定
+        document.getElementById('build').onclick = buildIntents;
+        document.getElementById('detect_env').onclick = detectEnvironmentAndReport;
+
+        document.getElementById('add').onclick = function () {
+            var n = document.getElementById('note');
+            var val = n.value.trim();
+            if (val) {
+                record('【手记】' + val, true);
+                n.value = '';
+            }
+        };
+
+        document.getElementById('clear_log').onclick = function () {
+            log.textContent = '';
+        };
+
+        document.getElementById('copy_log').onclick = function () {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(log.textContent)
+                    .then(function () {
+                        alert('日志已复制到剪贴板');
+                    })
+                    .catch(function () {
+                        alert('复制失败，请手动选择复制');
+                    });
+            }
+            else {
+                alert('当前浏览器不支持自动复制，请手动复制');
+            }
+        };
+
+        buildIntents();
+        record('测试页面已加载完毕。当前环境: ' + navigator.userAgent, true);
+    })();
+    </script>
+</body>
+</html>
